@@ -149,4 +149,71 @@ describe("GuacamoleToolbar Windows key", () => {
     expect(queryByText("Win+L")).toBeNull();
     expect(queryByText("Win")).toBeNull();
   });
+
+  it("shows Apple controls instead of Windows ones for ARD", () => {
+    const sendKey = vi.fn();
+    const displayRef = {
+      current: {
+        disconnect: vi.fn(),
+        isConnected: () => true,
+        sendKey,
+        sendMouse: vi.fn(),
+        setClipboard: vi.fn(),
+        getFilesystem: () => null,
+        uploadFile: vi.fn(),
+        zoomIn: vi.fn(() => 1.25),
+        zoomOut: vi.fn(() => 0.75),
+        resetZoom: vi.fn(() => 1),
+      } satisfies GuacamoleDisplayHandle,
+    } as React.RefObject<GuacamoleDisplayHandle>;
+
+    const { getByText, queryByText } = render(
+      <GuacamoleToolbar displayRef={displayRef} protocol="ard" />,
+    );
+
+    for (const gone of [
+      "CAD",
+      "Win+L",
+      "Win",
+      "Cmd+L",
+      "remoteDesktop.toolbar.alt",
+    ])
+      expect(queryByText(gone)).toBeNull();
+
+    fireEvent.click(getByText("Ctrl+Cmd+Q"));
+    expect(sendKey.mock.calls).toEqual([
+      [0xffe3, true],
+      [0xffeb, true],
+      [0x0071, true],
+      [0x0071, false],
+      [0xffeb, false],
+      [0xffe3, false],
+    ]);
+
+    sendKey.mockClear();
+    fireEvent.click(getByText("Force Quit"));
+    expect(sendKey.mock.calls).toEqual([
+      [0xffeb, true],
+      [0xffe9, true],
+      [0xff1b, true],
+      [0xff1b, false],
+      [0xffe9, false],
+      [0xffeb, false],
+    ]);
+
+    sendKey.mockClear();
+    fireEvent.click(getByText("Spotlight"));
+    expect(sendKey.mock.calls).toEqual([
+      [0xffeb, true],
+      [0x0020, true],
+      [0x0020, false],
+      [0xffeb, false],
+    ]);
+
+    sendKey.mockClear();
+    fireEvent.click(getByText("remoteDesktop.toolbar.option"));
+    expect(sendKey).toHaveBeenCalledWith(0xffe9, true);
+    fireEvent.click(getByText("remoteDesktop.toolbar.cmd"));
+    expect(sendKey).toHaveBeenCalledWith(0xffeb, true);
+  });
 });
