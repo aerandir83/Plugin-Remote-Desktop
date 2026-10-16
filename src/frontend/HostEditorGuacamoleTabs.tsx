@@ -1013,6 +1013,9 @@ export function HostEditorVncTab({
                   value={form[userKey]}
                   onChange={(e) => setField(userKey, e.target.value)}
                 />
+                <p className="text-[10px] text-muted-foreground">
+                  {t("hosts.guac.macUsernameHint")}
+                </p>
               </div>
             </div>
           )}

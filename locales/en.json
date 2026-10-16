@@ -237,6 +237,7 @@
       "ardPort": "ARD Port",
       "ardPassword": "macOS Password",
       "ardUsername": "macOS Username",
+      "macUsernameHint": "For a Mac, a macOS account username lets guacd sign in directly (Apple's type-30 login) and skips the password-only compatibility proxy.",
       "ardLeaveBlank": "Leave blank for a VNC-only password"
     },
     "remoteDesktop": "Remote Desktop",

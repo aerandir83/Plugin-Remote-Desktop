@@ -489,7 +489,9 @@ export function registerRoutes(router: Router, deps: RouteDeps): void {
             hostname,
             username || undefined,
             password,
-            { port, ...guacConfig, ...guacdOverrides },
+            // A Mac draws its own pointer lag-free with a local cursor; a host
+            // can still pick "remote" in its cursor mode.
+            { port, cursor: "local", ...guacConfig, ...guacdOverrides },
             recording,
             termixMeta,
           );
