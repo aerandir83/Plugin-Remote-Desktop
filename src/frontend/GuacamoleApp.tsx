@@ -52,7 +52,7 @@ import { needsRdpCredentialPrompt } from "./rdp-credential-prompt";
 interface GuacamoleAppProps {
   hostId?: string;
   tabId?: string;
-  protocol?: "rdp" | "vnc" | "telnet";
+  protocol?: "rdp" | "vnc" | "ard" | "telnet";
   isVisible?: boolean;
   /** A quick-connect host: never saved, so the token is minted from its fields. */
   quickConnectHost?: GuacamoleQuickHost;
@@ -90,7 +90,13 @@ function savedHostConfig(
     ip: host.ip ?? "",
     connectionType:
       protocol ??
-      (options.enableRdp ? "rdp" : options.enableVnc ? "vnc" : "telnet"),
+      (options.enableRdp
+        ? "rdp"
+        : options.enableVnc
+          ? "vnc"
+          : options.enableArd
+            ? "ard"
+            : "telnet"),
     domain: rdpDomain(host),
     guacamoleConfig: options.guacamoleConfig,
     rdpAuthType: host.protocolAuth?.rdp?.authType,
@@ -169,7 +175,7 @@ interface GuacamoleAppInnerProps {
   hostConfig: GuacamoleHostConfig;
   hostName: string;
   tabId?: string;
-  protocol?: "rdp" | "vnc" | "telnet";
+  protocol?: "rdp" | "vnc" | "ard" | "telnet";
   isVisible: boolean;
 }
 
@@ -263,7 +269,7 @@ const GuacamoleAppInner = React.forwardRef<
 
   const resolvedProtocolForConnect = (protocol ??
     hostConfig.connectionType ??
-    "rdp") as "rdp" | "vnc" | "telnet";
+    "rdp") as "rdp" | "vnc" | "ard" | "telnet";
   const needsCredentialPrompt = needsRdpCredentialPrompt({
     protocol: resolvedProtocolForConnect,
     rdpAuthType: hostConfig.rdpAuthType,

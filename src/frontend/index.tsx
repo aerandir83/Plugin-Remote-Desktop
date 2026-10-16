@@ -5,6 +5,7 @@ import {
   Monitor,
   MonitorUp,
   MousePointerClick,
+  ScreenShare,
   Server,
 } from "lucide-react";
 import {
@@ -82,6 +83,16 @@ const PROTOCOLS: {
     icon: MousePointerClick,
     priority: 40,
     order: 110,
+    quickConnect: {},
+  },
+  {
+    id: "ard",
+    titleKey: "hosts.tabArd",
+    descriptionKey: "hosts.appleScreenSharing",
+    paletteKey: "palette.connectArd",
+    icon: ScreenShare,
+    priority: 35,
+    order: 115,
     quickConnect: {},
   },
   {
@@ -246,6 +257,26 @@ function VncSection(props: HostEditorSectionProps) {
   );
 }
 
+function ArdSection(props: HostEditorSectionProps) {
+  const { form, setField, setGuacField } = remoteDesktopForm(props);
+  const macAddress = useWakeOnLanMac(props.host?.id);
+  return (
+    <>
+      <HostEditorVncTab
+        variant="ard"
+        form={form}
+        setField={setField}
+        setGuacField={setGuacField}
+        hostId={props.host?.id}
+        host={{ macAddress }}
+        credentials={props.credentials as never}
+      />
+      <ToolbarCard form={form} setField={setField} />
+      <SectionNotes />
+    </>
+  );
+}
+
 function TelnetSection(props: HostEditorSectionProps) {
   const { form, setField, setGuacField } = remoteDesktopForm(props);
   return (
@@ -287,6 +318,7 @@ function DisplayDefaultsSection(props: HostEditorSectionProps) {
 const SECTIONS: Record<Protocol, ComponentType<HostEditorSectionProps>> = {
   rdp: RdpSection,
   vnc: VncSection,
+  ard: ArdSection,
   telnet: TelnetSection,
 };
 

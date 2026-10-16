@@ -4,7 +4,7 @@
 
 <h1>Remote Desktop</h1>
 
-<p>RDP, VNC and Telnet sessions in your browser, with clipboard, file transfer, sharing and recording</p>
+<p>RDP, VNC, Apple Remote Desktop and Telnet sessions in your browser, with clipboard, file transfer, sharing and recording</p>
 
 <!-- VIDEO:START -->
 
@@ -18,7 +18,7 @@
 
 ## Overview
 
-Remote Desktop opens RDP, VNC and Telnet sessions in a tab, just like an SSH terminal.
+Remote Desktop opens RDP, VNC, Apple Remote Desktop and Telnet sessions in a tab, just like an SSH terminal.
 
 Read the [docs](https://docs.termix.site/plugins/remote-desktop) to set it up and use it.
 
@@ -26,7 +26,7 @@ Read the [docs](https://docs.termix.site/plugins/remote-desktop) to set it up an
 
 ## Features
 
-- RDP, VNC and Telnet from any browser
+- RDP, VNC, Apple Remote Desktop and Telnet from any browser
 - Tabs and split screen like any other session
 - Clipboard sync and file transfer through RDP drives
 - Jump host support

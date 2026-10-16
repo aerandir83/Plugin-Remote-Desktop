@@ -232,7 +232,12 @@
         "whiteOnBlack": "White on Black",
         "grayOnBlack": "Gray on Black",
         "greenOnBlack": "Green on Black"
-      }
+      },
+      "ardSettings": "Apple Remote Desktop Settings",
+      "ardPort": "ARD Port",
+      "ardPassword": "macOS Password",
+      "ardUsername": "macOS Username",
+      "ardLeaveBlank": "Leave blank for a VNC-only password"
     },
     "remoteDesktop": "Remote Desktop",
     "tabRdp": "RDP",
@@ -244,7 +249,9 @@
     "userDefaultsNote": "Settings you leave unchanged follow your host defaults.",
     "connectionOriginNote": "On the desktop app, RDP, VNC and Telnet use the remote server unless the host is set to This device, which needs a guacd this machine can reach. Set one in the Remote Desktop settings, or per host under guacd Proxy.",
     "docsLink": "View docs",
-    "connectionOriginGuacamoleNote": "RDP, VNC and Telnet use the remote server unless you pick \"This device\", which needs a guacd this machine can reach. Set one in the guacd URL setting, or per host under guacd Proxy."
+    "connectionOriginGuacamoleNote": "RDP, VNC and Telnet use the remote server unless you pick \"This device\", which needs a guacd this machine can reach. Set one in the guacd URL setting, or per host under guacd Proxy.",
+    "tabArd": "Apple Remote Desktop",
+    "appleScreenSharing": "Mac Screen Sharing"
   },
   "onboarding": {
     "guacdTitle": "Set up remote desktop",
@@ -360,16 +367,23 @@
       },
       "enableToolbar": {
         "label": "Remote desktop toolbar",
-        "description": "Show the toolbar in RDP, VNC and Telnet sessions."
+        "description": "Show the toolbar in RDP, VNC, ARD and Telnet sessions."
       },
       "displayGroup": "Display",
-      "displayDefaultsTab": "Remote Desktop"
+      "displayDefaultsTab": "Remote Desktop",
+      "enableArd": {
+        "label": "Apple Remote Desktop"
+      },
+      "ardPort": {
+        "label": "ARD port"
+      }
     }
   },
   "palette": {
     "connectRdp": "Connect with RDP",
     "connectVnc": "Connect with VNC",
-    "connectTelnet": "Connect with Telnet"
+    "connectTelnet": "Connect with Telnet",
+    "connectArd": "Connect with Apple Remote Desktop"
   },
   "permissions": {
     "sessions": {

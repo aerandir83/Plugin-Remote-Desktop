@@ -39,7 +39,7 @@ export interface TermixGuacMeta {
   hostId: number;
   hostName: string;
   ownerUserId: string;
-  protocol: "rdp" | "vnc" | "telnet";
+  protocol: "rdp" | "vnc" | "ard" | "telnet";
   tabInstanceId: string | null;
 }
 
@@ -54,7 +54,7 @@ export interface GuacamoleToken {
 export interface GuacamoleRecordingMetadata {
   hostId: number;
   userId: string;
-  protocol: "rdp" | "vnc" | "telnet";
+  protocol: "rdp" | "vnc" | "ard" | "telnet";
   path: string;
   /** Directory guacd was told to write into; differs from the backend's view
    * when guacd runs in its own container. */
@@ -295,6 +295,32 @@ export class GuacamoleTokenService {
       termixMeta,
     };
     return this.encryptToken(token);
+  }
+
+  /**
+   * Apple Remote Desktop is RFB with Apple's type-30 login, so guacd gets a
+   * plain "vnc" connection. Only termixMeta says it is ARD. A macOS username
+   * makes guacd's VNC client do the type-30 exchange itself.
+   */
+  createArdToken(
+    hostname: string,
+    username?: string,
+    password?: string,
+    options: Partial<GuacamoleConnectionSettings["settings"]> & {
+      guacdHost?: string;
+      guacdPort?: number;
+    } = {},
+    recording?: GuacamoleRecordingMetadata,
+    termixMeta?: TermixGuacMeta,
+  ): string {
+    return this.createVncToken(
+      hostname,
+      username,
+      password,
+      options,
+      recording,
+      termixMeta,
+    );
   }
 
   createTelnetToken(
