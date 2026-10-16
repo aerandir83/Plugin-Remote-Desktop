@@ -2,7 +2,7 @@
   "id": "remote-desktop",
   "name": "Remote Desktop",
   "version": "1.0.2",
-  "description": "RDP, VNC and Telnet sessions in your browser, with clipboard, file transfer, sharing and recording.",
+  "description": "RDP, VNC, Apple Remote Desktop and Telnet sessions in your browser, with clipboard, file transfer, sharing and recording.",
   "author": {
     "name": "Termix"
   },
@@ -13,7 +13,7 @@
   "category": "Terminal",
   "icon": "Monitor",
   "features": [
-    "RDP, VNC and Telnet from any browser",
+    "RDP, VNC, Apple Remote Desktop and Telnet from any browser",
     "Tabs and split screen like any other session",
     "Clipboard sync and file transfer through RDP drives",
     "Jump host support",
@@ -83,7 +83,7 @@
       "service": "sessions.live",
       "version": "1.0.0",
       "permission": "remote-desktop.sessions",
-      "names": ["rdp", "vnc", "telnet"]
+      "names": ["rdp", "vnc", "ard", "telnet"]
     }
   ],
   "requires": [
@@ -110,6 +110,12 @@
         "id": "vnc",
         "titleKey": "hosts.tabVnc",
         "icon": "MousePointerClick",
+        "openFrom": ["host-context-menu", "palette"]
+      },
+      {
+        "id": "ard",
+        "titleKey": "hosts.tabArd",
+        "icon": "ScreenShare",
         "openFrom": ["host-context-menu", "palette"]
       },
       {
@@ -140,6 +146,11 @@
         "id": "vnc",
         "defaultPort": 5900,
         "hostLoginFallback": ["password"]
+      },
+      {
+        "id": "ard",
+        "defaultPort": 5900,
+        "hostLoginFallback": ["username", "password"]
       },
       {
         "id": "telnet",
@@ -208,6 +219,14 @@
             "defaultable": false
           },
           {
+            "key": "enableArd",
+            "type": "boolean",
+            "labelKey": "settings.host.enableArd.label",
+            "default": false,
+            "hidden": true,
+            "defaultable": false
+          },
+          {
             "key": "enableTelnet",
             "type": "boolean",
             "labelKey": "settings.host.enableTelnet.label",
@@ -229,6 +248,16 @@
             "key": "vncPort",
             "type": "number",
             "labelKey": "settings.host.vncPort.label",
+            "min": 1,
+            "max": 65535,
+            "default": 5900,
+            "hidden": true,
+            "defaultable": false
+          },
+          {
+            "key": "ardPort",
+            "type": "number",
+            "labelKey": "settings.host.ardPort.label",
             "min": 1,
             "max": 65535,
             "default": 5900,

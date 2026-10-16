@@ -1,4 +1,4 @@
-Remote Desktop opens RDP, VNC and Telnet sessions in your browser, in tabs and split screen like any other session. It has clipboard sync, file transfer through an RDP drive, jump hosts, sharing and recording.
+Remote Desktop opens RDP, VNC, Apple Remote Desktop and Telnet sessions in your browser, in tabs and split screen like any other session. It has clipboard sync, file transfer through an RDP drive, jump hosts, sharing and recording.
 
 It uses [guacd](https://guacamole.apache.org/), the Apache Guacamole proxy, to turn those protocols into something a browser can show. guacd runs next to Termix.
 
@@ -28,9 +28,9 @@ Without Docker, install guacd from your distro or [build it](https://guacamole.a
 ## Add a host
 
 1. Open a host in Manage, or make a new one.
-2. In General, turn on RDP, VNC or Telnet. A host can have SSH and these at once.
+2. In General, turn on RDP, VNC, Apple Remote Desktop or Telnet. A host can have SSH and these at once.
 3. Open the protocol's section. Fill in the port, username and password, and for RDP the domain and security mode.
-4. Save, then pick RDP, VNC or Telnet from the host's menu.
+4. Save, then pick RDP, VNC, Apple Remote Desktop or Telnet from the host's menu.
 
 The login is stored encrypted, like SSH logins, and can be [shared](/guide/sharing) with the host.
 
@@ -75,3 +75,12 @@ With [Session Sharing](/plugins/session-sharing) on, you can share a live sessio
 - "Could not connect to guacd": Check `GUACD_HOST` points at guacd and both are on the same Docker network.
 - RDP fails right away: Try a different RDP security mode, or turn on Ignore certificate errors for a self-signed certificate.
 - Recordings are empty or missing: The two recording paths don't point at the same folder.
+
+## Apple Remote Desktop
+
+Apple Remote Desktop (ARD) is a Mac's Screen Sharing. It is its own host type, but guacd connects to it as VNC. Turn on Apple Remote Desktop in General and open its tab.
+
+- Enter the macOS account name and password. With a username, guacd signs in with Apple's own login, which is the one Screen Sharing uses.
+- Leave the username blank only for a Mac that has a VNC-only password. Termix then connects through a small compatibility proxy.
+- The port is 5900 unless you changed it.
+- Sessions are not recorded, as with VNC.

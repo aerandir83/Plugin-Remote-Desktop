@@ -42,7 +42,7 @@ import {
 
 interface GuacamoleToolbarProps {
   displayRef: React.RefObject<GuacamoleDisplayHandle>;
-  protocol: "rdp" | "vnc" | "telnet";
+  protocol: "rdp" | "vnc" | "ard" | "telnet";
   touchMode?: GuacamoleTouchMode | null;
   hasFilesystem?: boolean;
   fileBrowserOpen?: boolean;
@@ -62,7 +62,7 @@ interface RemoteDesktopToolbarContext {
   hostId: number;
   /** guacd's connection id, once the session is up. */
   sessionId: string | null;
-  protocol: "rdp" | "vnc" | "telnet";
+  protocol: "rdp" | "vnc" | "ard" | "telnet";
   tabInstanceId?: string;
   /** The backend the session runs on. */
   origin?: "local" | "remote";
@@ -281,7 +281,8 @@ export const GuacamoleToolbar: React.FC<GuacamoleToolbarProps> = ({
     [displayRef],
   );
 
-  const isRdpVnc = protocol === "rdp" || protocol === "vnc";
+  const isRdpVnc =
+    protocol === "rdp" || protocol === "vnc" || protocol === "ard";
 
   const containerStyle: React.CSSProperties = {
     position: "absolute",
