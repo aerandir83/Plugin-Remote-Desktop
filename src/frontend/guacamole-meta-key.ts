@@ -12,10 +12,11 @@ export interface MetaKeyLabels {
 /**
  * RDP is a Windows desktop, so the toolbar keeps Windows labels. VNC is used
  * for Linux and macOS as often as Windows; branding those sessions with a
- * Windows key is wrong, and the local device is the only OS we can see.
+ * Windows key is wrong, and the local device is the only OS we can see. ARD
+ * only ever targets a Mac, whatever the local device is.
  */
 export function detectMetaKeyFamily(
-  protocol: "rdp" | "vnc" | "telnet",
+  protocol: "rdp" | "vnc" | "ard" | "telnet",
   env: {
     platform?: string;
     userAgent?: string;
@@ -23,6 +24,7 @@ export function detectMetaKeyFamily(
   } = {},
 ): MetaKeyFamily {
   if (protocol === "rdp") return "win";
+  if (protocol === "ard") return "cmd";
 
   const uaPlatform = env.userAgentDataPlatform ?? "";
   const platform = env.platform ?? "";
@@ -35,7 +37,7 @@ export function detectMetaKeyFamily(
 }
 
 export function detectRuntimeMetaKeyFamily(
-  protocol: "rdp" | "vnc" | "telnet",
+  protocol: "rdp" | "vnc" | "ard" | "telnet",
 ): MetaKeyFamily {
   if (typeof navigator === "undefined") {
     return detectMetaKeyFamily(protocol);
