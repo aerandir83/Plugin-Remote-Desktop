@@ -75,6 +75,16 @@ const MODIFIER_KEYSYMS = {
   win: 0xffeb,
 } as const;
 
+// macOS reads Option as Alt_L and Command as Super_L over VNC/ARD.
+const MAC_KEYSYMS = {
+  ctrl: 0xffe3,
+  option: 0xffe9,
+  cmd: 0xffeb,
+  esc: 0xff1b,
+  space: 0x0020,
+  q: 0x0071,
+} as const;
+
 const FKEY_KEYSYMS = Array.from({ length: 12 }, (_, i) => 0xffbe + i);
 
 const BTN_BASE =
@@ -281,8 +291,8 @@ export const GuacamoleToolbar: React.FC<GuacamoleToolbarProps> = ({
     [displayRef],
   );
 
-  const isRdpVnc =
-    protocol === "rdp" || protocol === "vnc" || protocol === "ard";
+  const isArd = protocol === "ard";
+  const isRdpVnc = protocol === "rdp" || protocol === "vnc" || isArd;
 
   const containerStyle: React.CSSProperties = {
     position: "absolute",
@@ -423,18 +433,57 @@ export const GuacamoleToolbar: React.FC<GuacamoleToolbarProps> = ({
             {isRdpVnc && (
               <>
                 <div className={SEP} />
-                <TipBtn
-                  tooltip={t("remoteDesktop.toolbar.ctrlAltDel")}
-                  onClick={() => sendCombo(0xffe3, 0xffe9, 0xffff)}
-                >
-                  CAD
-                </TipBtn>
-                <TipBtn
-                  tooltip={t(meta.lockTooltip)}
-                  onClick={() => sendCombo(MODIFIER_KEYSYMS.win, 0x006c)}
-                >
-                  {meta.lock}
-                </TipBtn>
+                {isArd ? (
+                  <>
+                    <TipBtn
+                      tooltip={t("remoteDesktop.toolbar.forceQuit")}
+                      onClick={() =>
+                        sendCombo(
+                          MAC_KEYSYMS.cmd,
+                          MAC_KEYSYMS.option,
+                          MAC_KEYSYMS.esc,
+                        )
+                      }
+                    >
+                      Force Quit
+                    </TipBtn>
+                    <TipBtn
+                      tooltip={t("remoteDesktop.toolbar.macLock")}
+                      onClick={() =>
+                        sendCombo(
+                          MAC_KEYSYMS.ctrl,
+                          MAC_KEYSYMS.cmd,
+                          MAC_KEYSYMS.q,
+                        )
+                      }
+                    >
+                      Ctrl+Cmd+Q
+                    </TipBtn>
+                    <TipBtn
+                      tooltip={t("remoteDesktop.toolbar.spotlight")}
+                      onClick={() =>
+                        sendCombo(MAC_KEYSYMS.cmd, MAC_KEYSYMS.space)
+                      }
+                    >
+                      Spotlight
+                    </TipBtn>
+                  </>
+                ) : (
+                  <>
+                    <TipBtn
+                      tooltip={t("remoteDesktop.toolbar.ctrlAltDel")}
+                      onClick={() => sendCombo(0xffe3, 0xffe9, 0xffff)}
+                    >
+                      CAD
+                    </TipBtn>
+                    <TipBtn
+                      tooltip={t(meta.lockTooltip)}
+                      onClick={() => sendCombo(MODIFIER_KEYSYMS.win, 0x006c)}
+                    >
+                      {meta.lock}
+                    </TipBtn>
+                  </>
+                )}
                 <TipBtn
                   tooltip={t(meta.keyTooltip)}
                   onClick={() => sendCombo(MODIFIER_KEYSYMS.win)}
@@ -458,7 +507,9 @@ export const GuacamoleToolbar: React.FC<GuacamoleToolbarProps> = ({
                     [
                       "alt",
                       MODIFIER_KEYSYMS.alt,
-                      t("remoteDesktop.toolbar.alt"),
+                      isArd
+                        ? t("remoteDesktop.toolbar.option")
+                        : t("remoteDesktop.toolbar.alt"),
                     ],
                     [
                       "shift",
