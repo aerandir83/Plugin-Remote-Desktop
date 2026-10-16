@@ -136,6 +136,8 @@ export const GuacamoleDisplay = forwardRef<
   const zoomRef = useRef<number>(1);
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hasKeyboardFocusRef = useRef(false);
+  const isVisibleRef = useRef(isVisible);
+  isVisibleRef.current = isVisible;
   const windowFocusedRef = useRef(
     typeof document === "undefined" ? true : document.hasFocus(),
   );
@@ -612,6 +614,17 @@ export const GuacamoleDisplay = forwardRef<
             client.sendSize(size.width, size.height);
           }
           rescaleDisplay(false);
+          // Focus left on the Connect menu or Refresh button would swallow the
+          // first keystrokes. Stay put if the user is elsewhere.
+          if (
+            isVisibleRef.current &&
+            document.visibilityState === "visible" &&
+            windowFocusedRef.current
+          ) {
+            displayElement.focus({ preventScroll: true });
+            hasKeyboardFocusRef.current = true;
+            refreshKeyboardHandlers();
+          }
           break;
         case 4:
           break;
