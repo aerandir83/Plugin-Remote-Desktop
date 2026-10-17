@@ -20,7 +20,6 @@ export const CONNECTION_DEFAULTS: Record<
   },
   vnc: {
     "swap-red-blue": false,
-    cursor: "remote",
     width: 1280,
     height: 720,
     // macOS Screen Sharing can fail its first negotiation (Support#1063).
