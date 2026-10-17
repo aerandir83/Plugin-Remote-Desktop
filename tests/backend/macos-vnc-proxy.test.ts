@@ -1,10 +1,11 @@
 import net from "net";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMacosVncCompatibilityProxy } from "../../src/backend/macos-vnc-proxy.js";
 
 const closers: Array<() => void> = [];
 
 afterEach(() => {
+  vi.restoreAllMocks();
   for (const close of closers.splice(0)) close();
 });
 
@@ -111,5 +112,26 @@ describe("createMacosVncCompatibilityProxy", () => {
     expect((await read(client, 12)).toString("ascii")).toBe("RFB 003.008\n");
     client.write("RFB 003.008\n");
     expect([...(await read(client, 3))]).toEqual([2, 30, 33]);
+  });
+
+  it("disables Nagle's algorithm on both proxied TCP legs", async () => {
+    const target = net.createServer((socket) => socket.on("data", () => {}));
+    const targetPort = await listen(target);
+    closers.push(() => target.close());
+    const setNoDelay = vi.spyOn(net.Socket.prototype, "setNoDelay");
+    const proxy = await createMacosVncCompatibilityProxy({
+      targetHost: "127.0.0.1",
+      targetPort,
+      bindHost: "127.0.0.1",
+    });
+    closers.push(proxy.close);
+
+    const client = net.createConnection(proxy.port, "127.0.0.1");
+    closers.push(() => client.destroy());
+    await new Promise<void>((resolve) => client.once("connect", resolve));
+    await vi.waitFor(() => expect(setNoDelay).toHaveBeenCalledTimes(2));
+    expect(setNoDelay.mock.calls.every(([noDelay]) => noDelay === true)).toBe(
+      true,
+    );
   });
 });
