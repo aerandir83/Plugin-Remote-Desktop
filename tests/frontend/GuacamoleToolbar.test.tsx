@@ -240,18 +240,18 @@ describe("GuacamoleToolbar on a Mac", () => {
 
     // Cmd+Option+Esc: pressed in order, released in reverse.
     expect(press("forceQuit")).toEqual([
-      [0xffe7, true],
+      [0xffeb, true],
       [0xffe9, true],
       [0xff1b, true],
       [0xff1b, false],
       [0xffe9, false],
-      [0xffe7, false],
+      [0xffeb, false],
     ]);
     expect(press("macLock").map((call) => call[0])).toEqual([
-      0xffe3, 0xffe7, 0x0071, 0x0071, 0xffe7, 0xffe3,
+      0xffe3, 0xffeb, 0x0071, 0x0071, 0xffeb, 0xffe3,
     ]);
     expect(press("spotlight").map((call) => call[0])).toEqual([
-      0xffe7, 0x0020, 0x0020, 0xffe7,
+      0xffeb, 0x0020, 0x0020, 0xffeb,
     ]);
   });
 
@@ -272,24 +272,5 @@ describe("GuacamoleToolbar on a Mac", () => {
       vnc.queryAllByText("remoteDesktop.toolbar.alt").length,
     ).toBeGreaterThan(0);
     expect(vnc.queryAllByText("remoteDesktop.toolbar.option")).toHaveLength(0);
-  });
-
-  it("sends Command as Meta_L on ARD and Super_L on VNC", () => {
-    for (const [protocol, keysym] of [
-      ["ard", 0xffe7],
-      ["vnc", 0xffeb],
-    ] as const) {
-      const ref = display();
-      const sendKey = ref.current!.sendKey as ReturnType<typeof vi.fn>;
-      const { getAllByRole, unmount } = render(
-        <GuacamoleToolbar displayRef={ref} protocol={protocol} />,
-      );
-      const meta = getAllByRole("button", {
-        name: /remoteDesktop\.toolbar\.(cmdKey|superKey)/,
-      })[0];
-      fireEvent.click(meta);
-      expect(sendKey.mock.calls[0]).toEqual([keysym, true]);
-      unmount();
-    }
   });
 });

@@ -36,8 +36,6 @@ export const KEYSYM = {
   alt: 0xffe9,
   shift: 0xffe1,
   meta: 0xffeb,
-  /** guacamole-common-js sends the browser's Meta key as Meta_L, and macOS reads that as Command. Super_L (meta above) it ignores. */
-  command: 0xffe7,
   delete: 0xffff,
   l: 0x006c,
   escape: 0xff1b,
