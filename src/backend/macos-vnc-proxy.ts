@@ -22,6 +22,9 @@ export async function createMacosVncCompatibilityProxy({
   const sockets = new Set<net.Socket>();
   const server = net.createServer((client) => {
     const upstream = net.createConnection(targetPort, targetHost);
+    // RFB input is many tiny writes; Nagle would hold them back for an ACK.
+    client.setNoDelay(true);
+    upstream.setNoDelay(true);
     sockets.add(client);
     sockets.add(upstream);
 
