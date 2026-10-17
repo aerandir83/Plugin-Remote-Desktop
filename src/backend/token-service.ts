@@ -74,7 +74,9 @@ export const TOKEN_TTL_MS = 5 * 60 * 1000;
 /**
  * Settings the server decides, never the caller: where guacd is, every path
  * guacd writes or reads on its own filesystem, the recording file name, and
- * VNC listen mode, which would open a port on the guacd host. What a
+ * VNC listen mode, which would open a port on the guacd host, and where an
+ * SFTP session connects and as whom (sftp-*), which would aim guacd at any
+ * SSH server. What a
  * recording contains (recording-exclude-output and the like) stays the
  * host's choice.
  */
@@ -85,6 +87,7 @@ export function isServerOwnedSetting(key: string): boolean {
     key.startsWith("create-") ||
     key === "recording-name" ||
     key.startsWith("typescript-") ||
+    key.startsWith("sftp-") ||
     key === "reverse-connect" ||
     key === "listen-timeout"
   );

@@ -13,6 +13,7 @@ import type {
 import type { PluginManifest } from "@termix-ssh/plugin-sdk/manifest";
 import manifestJson from "../../manifest.json";
 import { activate } from "../../src/backend/index.js";
+import { withSftpSettings } from "../../src/backend/routes.js";
 import { GuacamoleTokenService } from "../../src/backend/token-service.js";
 
 const manifest = manifestJson as unknown as PluginManifest;
@@ -261,6 +262,96 @@ describe("POST /connect-host/:hostId", () => {
       const settings = await connectVnc("RFB 003.008\n");
       expect(settings).not.toHaveProperty("cursor");
       expect(settings).not.toHaveProperty("color-depth");
+    });
+  });
+
+  describe("SFTP file transfer", () => {
+    async function connectArd(
+      guacamoleConfig: Record<string, unknown>,
+      options: { username?: string; jumpHosts?: boolean } = {},
+    ) {
+      const base = target({ username: options.username ?? "mac" });
+      server = await start({
+        protocolTargets: {
+          "7:ard": {
+            ...base,
+            host: {
+              ...base.host,
+              port: 2222,
+              jumpHosts: options.jumpHosts
+                ? ([{ id: 1 }] as unknown as typeof base.host.jumpHosts)
+                : [],
+            },
+          },
+        },
+      });
+      await server.mock.ctx.settings.setHost(7, "enableArd", true);
+      await server.mock.ctx.settings.setHost(
+        7,
+        "guacamoleConfig",
+        guacamoleConfig,
+      );
+      const response = await server.request("POST", "/connect-host/7", {
+        protocol: "ard",
+      });
+      return response;
+    }
+
+    it("points guacd at the host's own SSH port and login", async () => {
+      const response = await connectArd({
+        "enable-sftp": true,
+        // A host editor must not choose where SFTP connects.
+        "sftp-hostname": "169.254.169.254",
+        "sftp-username": "root",
+      });
+      expect(response.status).toBe(200);
+      const settings = tokens.decryptToken(response.body.token)?.connection
+        .settings;
+      expect(settings).toMatchObject({
+        "enable-sftp": true,
+        "sftp-hostname": "10.0.0.7",
+        "sftp-port": 2222,
+        "sftp-username": "mac",
+        "sftp-password": "secret",
+      });
+    });
+
+    it("stays off unless the host asks for it", async () => {
+      const response = await connectArd({ "sftp-hostname": "10.9.9.9" });
+      const settings = tokens.decryptToken(response.body.token)?.connection
+        .settings;
+      expect(settings).not.toHaveProperty("enable-sftp");
+      expect(settings).not.toHaveProperty("sftp-hostname");
+    });
+
+    it("stays off without a username", async () => {
+      const response = await connectArd(
+        { "enable-sftp": true },
+        { username: "" },
+      );
+      const settings = tokens.decryptToken(response.body.token)?.connection
+        .settings;
+      expect(settings).not.toHaveProperty("enable-sftp");
+      expect(settings).not.toHaveProperty("sftp-password");
+    });
+
+    it("stays off behind jump hosts, which only tunnel the VNC port", () => {
+      const base = target();
+      const behindJump = {
+        ...base,
+        host: {
+          ...base.host,
+          jumpHosts: [{ id: 1 }] as unknown as typeof base.host.jumpHosts,
+        },
+      };
+      const settings = withSftpSettings(
+        { "enable-sftp": true },
+        behindJump,
+        "mac",
+        "pw",
+      );
+      expect(settings).not.toHaveProperty("enable-sftp");
+      expect(settings).not.toHaveProperty("sftp-password");
     });
   });
 

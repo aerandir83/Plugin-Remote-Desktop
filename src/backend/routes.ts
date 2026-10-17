@@ -2,7 +2,10 @@ import crypto from "crypto";
 import net from "net";
 import path from "path";
 import type { Request, Response, Router } from "express";
-import type { PluginContext } from "@termix-ssh/plugin-sdk/backend";
+import type {
+  PluginContext,
+  PluginProtocolTarget,
+} from "@termix-ssh/plugin-sdk/backend";
 import {
   isServerOwnedSetting,
   type GuacamoleTokenService,
@@ -87,6 +90,31 @@ function cleanGuacConfig(
     config.dpi = Number.isFinite(dpi) && dpi > 0 ? dpi : undefined;
   }
   return config;
+}
+
+/**
+ * File transfer over SFTP to the Mac behind a VNC or ARD host. guacd gets the
+ * host's own address, SSH port and login; a host can only switch it on. It
+ * stays off without a username, and behind jump hosts, which tunnel only the
+ * VNC port.
+ */
+export function withSftpSettings(
+  guacConfig: Record<string, unknown>,
+  target: PluginProtocolTarget,
+  username: string,
+  password: string,
+): Record<string, unknown> {
+  const { "enable-sftp": requested, ...rest } = guacConfig;
+  const enabled = requested === true || requested === "true";
+  if (!enabled || !username || target.host.jumpHosts.length > 0) return rest;
+  return {
+    ...rest,
+    "enable-sftp": true,
+    "sftp-hostname": target.host.ip,
+    "sftp-port": target.host.port || 22,
+    "sftp-username": username,
+    "sftp-password": password,
+  };
 }
 
 /** A host's admin-set guacd address, as token settings. */
@@ -493,7 +521,7 @@ export function registerRoutes(router: Router, deps: RouteDeps): void {
             {
               port,
               ...(isMacos ? MACOS_VNC_DEFAULTS : {}),
-              ...guacConfig,
+              ...withSftpSettings(guacConfig, target, username, password),
               ...guacdOverrides,
             },
             recording,
@@ -504,7 +532,12 @@ export function registerRoutes(router: Router, deps: RouteDeps): void {
             hostname,
             username || undefined,
             password,
-            { port, ...MACOS_VNC_DEFAULTS, ...guacConfig, ...guacdOverrides },
+            {
+              port,
+              ...MACOS_VNC_DEFAULTS,
+              ...withSftpSettings(guacConfig, target, username, password),
+              ...guacdOverrides,
+            },
             recording,
             termixMeta,
           );
