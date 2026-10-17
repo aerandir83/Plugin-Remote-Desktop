@@ -5,6 +5,43 @@ const VNC_AUTH_SECURITY_TYPE = 2;
 const MACOS_RFB_BANNER = Buffer.from("RFB 003.889\n", "ascii");
 const STANDARD_RFB_BANNER = Buffer.from("RFB 003.008\n", "ascii");
 
+/**
+ * Settings a Mac does better with: it draws its own pointer lag-free with a
+ * local cursor, and 16 bpp cut its screen traffic about 4x in testing (#5).
+ * A host can still pick its own.
+ */
+export const MACOS_VNC_DEFAULTS = { cursor: "local", "color-depth": 16 };
+
+/**
+ * Whether a VNC server announces itself as macOS Screen Sharing. Only reads
+ * the 12-byte banner, then hangs up; any failure or silence counts as "no".
+ */
+export function isMacosVncServer(
+  host: string,
+  port: number,
+  timeoutMs = 2000,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    const socket = net.createConnection(port, host);
+    let received = Buffer.alloc(0);
+    const finish = (isMacos: boolean) => {
+      socket.destroy();
+      resolve(isMacos);
+    };
+    socket.setTimeout(timeoutMs, () => finish(false));
+    socket.once("error", () => finish(false));
+    socket.once("close", () => finish(false));
+    socket.on("data", (chunk: Buffer) => {
+      received = Buffer.concat([received, chunk]);
+      if (received.length >= RFB_BANNER_LENGTH) {
+        finish(
+          received.subarray(0, RFB_BANNER_LENGTH).equals(MACOS_RFB_BANNER),
+        );
+      }
+    });
+  });
+}
+
 export interface VncCompatibilityProxy {
   port: number;
   close: () => void;

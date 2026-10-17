@@ -1202,6 +1202,27 @@ export function HostEditorVncTab({
               <option value="windows">{t("hosts.guac.options.windows")}</option>
             </Select2>
           </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              {t("hosts.guac.clipboardEncoding")}
+            </label>
+            <Select2
+              className="flex h-9 w-full border border-border bg-background px-3 py-1 text-xs outline-none focus:ring-1 focus:ring-ring"
+              value={form.guacamoleConfig["clipboard-encoding"] ?? "auto"}
+              onChange={(e) =>
+                setGuacField("clipboard-encoding", e.target.value)
+              }
+            >
+              <option value="auto">{t("hosts.guac.options.auto")}</option>
+              <option value="UTF-8">UTF-8</option>
+              <option value="UTF-16">UTF-16</option>
+              <option value="CP1252">CP1252</option>
+              <option value="ISO8859-1">ISO8859-1</option>
+            </Select2>
+            <p className="text-[11px] text-muted-foreground">
+              {t("hosts.guac.clipboardEncodingDesc")}
+            </p>
+          </div>
           <SettingRow
             label={t("hosts.guac.disableCopy")}
             description={t("hosts.guac.disableCopyDesc")}

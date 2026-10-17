@@ -1,6 +1,9 @@
 import net from "net";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMacosVncCompatibilityProxy } from "../../src/backend/macos-vnc-proxy.js";
+import {
+  createMacosVncCompatibilityProxy,
+  isMacosVncServer,
+} from "../../src/backend/macos-vnc-proxy.js";
 
 const closers: Array<() => void> = [];
 
@@ -133,5 +136,38 @@ describe("createMacosVncCompatibilityProxy", () => {
     expect(setNoDelay.mock.calls.every(([noDelay]) => noDelay === true)).toBe(
       true,
     );
+  });
+});
+
+describe("isMacosVncServer", () => {
+  async function serveBanner(banner: string | null): Promise<number> {
+    const server = net.createServer((socket) => {
+      socket.on("error", () => {});
+      if (banner) socket.write(banner);
+    });
+    closers.push(() => server.close());
+    return listen(server);
+  }
+
+  it("recognises the macOS Screen Sharing banner", async () => {
+    const port = await serveBanner("RFB 003.889\n");
+    expect(await isMacosVncServer("127.0.0.1", port)).toBe(true);
+  });
+
+  it("does not take another VNC server for a Mac", async () => {
+    const port = await serveBanner("RFB 003.008\n");
+    expect(await isMacosVncServer("127.0.0.1", port)).toBe(false);
+  });
+
+  it("gives up on a server that stays silent", async () => {
+    const port = await serveBanner(null);
+    expect(await isMacosVncServer("127.0.0.1", port, 100)).toBe(false);
+  });
+
+  it("answers no when nothing is listening", async () => {
+    const server = net.createServer();
+    const port = await listen(server);
+    server.close();
+    expect(await isMacosVncServer("127.0.0.1", port)).toBe(false);
   });
 });
