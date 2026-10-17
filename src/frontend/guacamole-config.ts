@@ -45,6 +45,7 @@ export interface GuacamoleConfig {
   remoteAppDir?: string;
   remoteAppArgs?: string;
   normalizeClipboard?: string;
+  clipboardEncoding?: string;
   disableCopy?: boolean;
   disablePaste?: boolean;
   cursor?: string;

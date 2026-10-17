@@ -134,6 +134,7 @@ function toGuacamoleParams(
     remoteAppDir: "remote-app-dir",
     remoteAppArgs: "remote-app-args",
     normalizeClipboard: "normalize-clipboard",
+    clipboardEncoding: "clipboard-encoding",
     disableCopy: "disable-copy",
     disablePaste: "disable-paste",
     swapRedBlue: "swap-red-blue",

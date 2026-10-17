@@ -223,6 +223,47 @@ describe("POST /connect-host/:hostId", () => {
     expect(token?.recording).toBeUndefined();
   });
 
+  describe("a VNC host's banner", () => {
+    async function connectVnc(banner: string) {
+      const rfb = net.createServer((socket) => {
+        socket.on("error", () => {});
+        socket.write(banner);
+      });
+      await new Promise<void>((resolve) => rfb.listen(0, "127.0.0.1", resolve));
+      const rfbPort = (rfb.address() as AddressInfo).port;
+      try {
+        const base = target({ username: "mac" });
+        server = await start({
+          protocolTargets: {
+            "7:vnc": { ...base, host: { ...base.host, ip: "127.0.0.1" } },
+          },
+        });
+        await server.mock.ctx.settings.setHost(7, "enableVnc", true);
+        await server.mock.ctx.settings.setHost(7, "vncPort", rfbPort);
+        const response = await server.request("POST", "/connect-host/7", {
+          protocol: "vnc",
+        });
+        expect(response.status).toBe(200);
+        return tokens.decryptToken(response.body.token)?.connection.settings;
+      } finally {
+        rfb.close();
+      }
+    }
+
+    it("gets the Mac defaults when it announces macOS", async () => {
+      expect(await connectVnc("RFB 003.889\n")).toMatchObject({
+        cursor: "local",
+        "color-depth": 16,
+      });
+    });
+
+    it("keeps the plain defaults for any other VNC server", async () => {
+      const settings = await connectVnc("RFB 003.008\n");
+      expect(settings).not.toHaveProperty("cursor");
+      expect(settings).not.toHaveProperty("color-depth");
+    });
+  });
+
   it("refuses ARD while the host has it switched off", async () => {
     server = await start({ protocolTargets: { "7:ard": target() } });
     const response = await server.request("POST", "/connect-host/7", {

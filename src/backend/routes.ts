@@ -15,7 +15,11 @@ import { withRecordingSettings } from "./recording-settings.js";
 import { withDriveSettings } from "./drive-settings.js";
 import { resolveJumpTunnelEndpoint } from "./jump-tunnel-endpoint.js";
 import { buildRdpSettings, resolveRdpDomain } from "./rdp-settings.js";
-import { createMacosVncCompatibilityProxy } from "./macos-vnc-proxy.js";
+import {
+  MACOS_VNC_DEFAULTS,
+  createMacosVncCompatibilityProxy,
+  isMacosVncServer,
+} from "./macos-vnc-proxy.js";
 import { openJumpTunnel } from "./jump-tunnel.js";
 import {
   DEFAULT_PORT,
@@ -375,6 +379,7 @@ export function registerRoutes(router: Router, deps: RouteDeps): void {
         const needsVncProxy =
           (protocol === "vnc" || protocol === "ard") && !username;
 
+        let isMacos = false;
         const endpoint =
           jumpHosts.length > 0 || needsVncProxy
             ? resolveJumpTunnelEndpoint(
@@ -394,6 +399,11 @@ export function registerRoutes(router: Router, deps: RouteDeps): void {
             cleanups.push(tunnel.close);
             hostname = endpoint.advertisedHost;
             port = tunnel.port;
+          }
+
+          // A VNC host is only known to be a Mac from its banner.
+          if (protocol === "vnc") {
+            isMacos = await isMacosVncServer(hostname, port);
           }
 
           if (needsVncProxy && endpoint) {
@@ -480,7 +490,12 @@ export function registerRoutes(router: Router, deps: RouteDeps): void {
             hostname,
             username || undefined,
             password,
-            { port, ...guacConfig, ...guacdOverrides },
+            {
+              port,
+              ...(isMacos ? MACOS_VNC_DEFAULTS : {}),
+              ...guacConfig,
+              ...guacdOverrides,
+            },
             recording,
             termixMeta,
           );
@@ -489,16 +504,7 @@ export function registerRoutes(router: Router, deps: RouteDeps): void {
             hostname,
             username || undefined,
             password,
-            // A Mac draws its own pointer lag-free with a local cursor, and 16
-            // bpp cut its screen traffic about 4x in testing (#5); a host can
-            // still pick "remote" or another colour depth.
-            {
-              port,
-              cursor: "local",
-              "color-depth": 16,
-              ...guacConfig,
-              ...guacdOverrides,
-            },
+            { port, ...MACOS_VNC_DEFAULTS, ...guacConfig, ...guacdOverrides },
             recording,
             termixMeta,
           );

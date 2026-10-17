@@ -137,6 +137,8 @@
       "workingDirectory": "Working Directory",
       "arguments": "Arguments",
       "normalizeLineEndings": "Normalize Line Endings",
+      "clipboardEncoding": "Clipboard Encoding",
+      "clipboardEncodingDesc": "Text encoding of the VNC clipboard. Leave on Auto (ISO8859-1) unless pasted non-Latin text arrives garbled; a Mac may ignore UTF-8.",
       "macAddress": "MAC Address",
       "broadcastAddress": "Broadcast Address",
       "udpPort": "UDP Port",
