@@ -295,7 +295,15 @@ const GuacamoleAppInner = React.forwardRef<
     reconnect: () => reconnectRef.current(),
   }));
 
+  // retryNow() has no in-flight guard (StrictMode double-mounts the connect
+  // effect, handleReconnect calls it directly), so overlapping fetchToken calls
+  // each hand the display a token and start their own guacd session. Only the
+  // newest call may apply its result.
+  const fetchGenRef = useRef(0);
+
   const fetchToken = useCallback(async (): Promise<void> => {
+    const gen = fetchGenRef.current;
+    const isStale = () => gen !== fetchGenRef.current;
     setToken(null);
     setIsDisplayReady(false);
     setSessionLookup(null);
@@ -317,6 +325,7 @@ const GuacamoleAppInner = React.forwardRef<
           throw new Error(t("errors.remoteServerRequired"));
         }
       }
+      if (isStale()) return;
     }
 
     addLog({
@@ -329,6 +338,7 @@ const GuacamoleAppInner = React.forwardRef<
       protocol: resolvedProtocolForConnect,
       syncId: hostConfig.syncId,
     });
+    if (isStale()) return;
     if (status.enabled === false) {
       throw new Error(t("remoteDesktop.disabled"));
     }
@@ -369,6 +379,7 @@ const GuacamoleAppInner = React.forwardRef<
             hostConfig.syncId,
             tabId,
           );
+    if (isStale()) return;
     if (result) {
       setSessionLookup(
         result.termixConnectId
@@ -397,10 +408,13 @@ const GuacamoleAppInner = React.forwardRef<
 
   const tokenRetry = useConnectionRetry({
     connect: async () => {
+      const gen = ++fetchGenRef.current;
       try {
         await fetchToken();
+        if (gen !== fetchGenRef.current) return;
         tokenRetryRef.current.markConnected();
       } catch (err: unknown) {
+        if (gen !== fetchGenRef.current) return;
         const message = errorMessage(err, t("remoteDesktop.failedToConnect"));
         setError(message || t("remoteDesktop.failedToConnect"));
         addLog({ type: "error", stage: "error", message });
