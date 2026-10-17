@@ -489,9 +489,16 @@ export function registerRoutes(router: Router, deps: RouteDeps): void {
             hostname,
             username || undefined,
             password,
-            // A Mac draws its own pointer lag-free with a local cursor; a host
-            // can still pick "remote" in its cursor mode.
-            { port, cursor: "local", ...guacConfig, ...guacdOverrides },
+            // A Mac draws its own pointer lag-free with a local cursor, and 16
+            // bpp cut its screen traffic about 4x in testing (#5); a host can
+            // still pick "remote" or another colour depth.
+            {
+              port,
+              cursor: "local",
+              "color-depth": 16,
+              ...guacConfig,
+              ...guacdOverrides,
+            },
             recording,
             termixMeta,
           );
