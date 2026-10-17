@@ -190,6 +190,12 @@ export const GuacamoleToolbar: React.FC<GuacamoleToolbarProps> = ({
     [sendKey],
   );
 
+  // The Mac's Command key is Meta_L; everything else uses Super_L.
+  const metaKeysym = protocol === "ard" ? KEYSYM.command : KEYSYM.meta;
+  const modifiers = MODIFIERS.map((modifier) =>
+    modifier.id === "meta" ? { ...modifier, key: metaKeysym } : modifier,
+  );
+
   // A Mac calls the Alt key Option.
   const modifierLabel = (labelKey: string) => {
     if (!labelKey) return t(meta.stickyKey);
@@ -375,7 +381,7 @@ export const GuacamoleToolbar: React.FC<GuacamoleToolbarProps> = ({
           item.id,
           title,
           labeled ? title : null,
-          () => sendCombo(KEYSYM.meta, KEYSYM.alt, KEYSYM.escape),
+          () => sendCombo(metaKeysym, KEYSYM.alt, KEYSYM.escape),
           { icon: item.icon },
         );
       case "macLock":
@@ -383,7 +389,7 @@ export const GuacamoleToolbar: React.FC<GuacamoleToolbarProps> = ({
           item.id,
           title,
           labeled ? title : null,
-          () => sendCombo(KEYSYM.ctrl, KEYSYM.meta, KEYSYM.q),
+          () => sendCombo(KEYSYM.ctrl, metaKeysym, KEYSYM.q),
           { icon: item.icon },
         );
       case "spotlight":
@@ -391,17 +397,17 @@ export const GuacamoleToolbar: React.FC<GuacamoleToolbarProps> = ({
           item.id,
           title,
           labeled ? title : null,
-          () => sendCombo(KEYSYM.meta, KEYSYM.space),
+          () => sendCombo(metaKeysym, KEYSYM.space),
           { icon: item.icon },
         );
       case "metaKey":
         return textButton(item.id, t(meta.keyTooltip), meta.short, () =>
-          sendCombo(KEYSYM.meta),
+          sendCombo(metaKeysym),
         );
       case "modifiers":
         return (
           <span key={item.id} className="flex items-center">
-            {MODIFIERS.map((modifier) => {
+            {modifiers.map((modifier) => {
               const label = modifierLabel(modifier.labelKey);
               const on = latched.has(modifier.key);
               return textButton(
@@ -545,7 +551,7 @@ export const GuacamoleToolbar: React.FC<GuacamoleToolbarProps> = ({
             key: item.id,
             label: title,
             icon: item.icon,
-            run: () => sendCombo(KEYSYM.meta, KEYSYM.alt, KEYSYM.escape),
+            run: () => sendCombo(metaKeysym, KEYSYM.alt, KEYSYM.escape),
           },
         ];
       case "macLock":
@@ -554,7 +560,7 @@ export const GuacamoleToolbar: React.FC<GuacamoleToolbarProps> = ({
             key: item.id,
             label: title,
             icon: item.icon,
-            run: () => sendCombo(KEYSYM.ctrl, KEYSYM.meta, KEYSYM.q),
+            run: () => sendCombo(KEYSYM.ctrl, metaKeysym, KEYSYM.q),
           },
         ];
       case "spotlight":
@@ -563,7 +569,7 @@ export const GuacamoleToolbar: React.FC<GuacamoleToolbarProps> = ({
             key: item.id,
             label: title,
             icon: item.icon,
-            run: () => sendCombo(KEYSYM.meta, KEYSYM.space),
+            run: () => sendCombo(metaKeysym, KEYSYM.space),
           },
         ];
       case "metaKey":
@@ -571,11 +577,11 @@ export const GuacamoleToolbar: React.FC<GuacamoleToolbarProps> = ({
           {
             key: item.id,
             label: t(meta.keyTooltip),
-            run: () => sendCombo(KEYSYM.meta),
+            run: () => sendCombo(metaKeysym),
           },
         ];
       case "modifiers":
-        return MODIFIERS.map((modifier) => ({
+        return modifiers.map((modifier) => ({
           key: modifier.id,
           label: modifierLabel(modifier.labelKey),
           checked: latched.has(modifier.key),
