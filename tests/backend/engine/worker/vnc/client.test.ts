@@ -10,6 +10,7 @@ import {
   chooseSecurity,
   chooseVencrypt,
   chooseVersion,
+  cursorMode,
   encodingList,
 } from "../../../../../src/backend/engine/worker/vnc/client.js";
 import {
@@ -33,6 +34,21 @@ describe("negotiation choices", () => {
     expect(chooseVersion("RFB 003.889\n", true).reply).toBe("RFB 003.889\n");
     expect(chooseVersion("RFB 003.889\n", false).reply).toBe("RFB 003.008\n");
     expect(() => chooseVersion("SSH-2.0-x\r\n", false)).toThrow();
+  });
+
+  it("tells a Mac from the rest by its banner", () => {
+    expect(chooseVersion("RFB 003.889\n", true).apple).toBe(true);
+    expect(chooseVersion("RFB 003.889\n", false).apple).toBe(true);
+    expect(chooseVersion("RFB 003.008\n", true).apple).toBe(false);
+    expect(chooseVersion("RFB 003.003\n", false).apple).toBe(false);
+  });
+
+  it("uses a local cursor for a Mac unless the host says otherwise", () => {
+    expect(cursorMode("", true)).toBe("local");
+    expect(cursorMode("", false)).toBe("remote");
+    expect(cursorMode("remote", true)).toBe("remote");
+    expect(cursorMode("local", false)).toBe("local");
+    expect(cursorMode("bogus", true)).toBe("local");
   });
 
   it("picks the login from what the server offers", () => {
@@ -79,6 +95,7 @@ function host(port: number, settings: Record<string, string> = {}) {
     damage: vi.fn(),
     copy: vi.fn(),
     cursorDot: vi.fn(),
+    cursorDefault: vi.fn(),
     cursorHidden: vi.fn(),
     setCursor: vi.fn(),
   };
@@ -118,6 +135,29 @@ const until = async (check: () => boolean) => {
   for (let i = 0; i < 200 && !check(); i++)
     await new Promise((r) => setTimeout(r, 10));
 };
+
+/** A server that accepts any VncAuth login and then stays quiet. */
+async function quietServer(banner = "RFB 003.008\n", reply = "RFB 003.008\n") {
+  const server = await fakeServer(async (socket, r) => {
+    socket.write(banner);
+    expect((await r.bytes(12)).toString()).toBe(reply);
+    socket.write(Buffer.from([1, 2]));
+    await r.u8();
+    socket.write(Buffer.alloc(16, 7));
+    await r.bytes(16);
+    socket.write(Buffer.alloc(4));
+    await r.u8(); // shared
+    const init = Buffer.alloc(24 + 4);
+    init.writeUInt16BE(4, 0);
+    init.writeUInt16BE(2, 2);
+    init.writeUInt32BE(4, 20);
+    init.write("test", 24);
+    socket.write(init);
+    for (;;) await r.u8();
+  });
+  servers.push(server);
+  return (server.address() as AddressInfo).port;
+}
 
 describe("VncClient", () => {
   it("logs in with VncAuth, draws an update and resizes", async () => {
@@ -262,5 +302,49 @@ describe("VncClient", () => {
       "Could not reach the VNC server",
       0x207,
     );
+  });
+});
+
+describe("VncClient pointer", () => {
+  it("marks the pointer with a dot when the server paints it", async () => {
+    const port = await quietServer();
+    const { h, display, ready } = host(port);
+    const client = new VncClient(h);
+    clients.push(client);
+    client.start();
+    await ready;
+    expect(display.cursorDot).toHaveBeenCalled();
+    expect(display.cursorDefault).not.toHaveBeenCalled();
+  });
+
+  it("shows the arrow for a local cursor until the server sends a shape", async () => {
+    const port = await quietServer();
+    const { h, display, ready } = host(port, { cursor: "local" });
+    const client = new VncClient(h);
+    clients.push(client);
+    client.start();
+    await ready;
+    expect(display.cursorDefault).toHaveBeenCalled();
+    expect(display.cursorDot).not.toHaveBeenCalled();
+  });
+  it("draws a local cursor for a Mac that has no cursor setting", async () => {
+    const port = await quietServer("RFB 003.889\n", "RFB 003.008\n");
+    const { h, display, ready } = host(port);
+    const client = new VncClient(h);
+    clients.push(client);
+    client.start();
+    await ready;
+    expect(display.cursorDefault).toHaveBeenCalled();
+  });
+
+  it("keeps a Mac's cursor remote when the host asks for it", async () => {
+    const port = await quietServer("RFB 003.889\n", "RFB 003.008\n");
+    const { h, display, ready } = host(port, { cursor: "remote" });
+    const client = new VncClient(h);
+    clients.push(client);
+    client.start();
+    await ready;
+    expect(display.cursorDefault).not.toHaveBeenCalled();
+    expect(display.cursorDot).toHaveBeenCalled();
   });
 });

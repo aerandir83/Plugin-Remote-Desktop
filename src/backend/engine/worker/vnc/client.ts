@@ -112,7 +112,7 @@ export function pixelFormatFor(
 export function chooseVersion(
   banner: string,
   hasUsername: boolean,
-): { minor: number; reply: string } {
+): { minor: number; reply: string; apple: boolean } {
   const match = /^RFB (\d{3})\.(\d{3})\n$/.exec(banner);
   if (!match) throw new VncError("Not a VNC server", Status.UPSTREAM_ERROR);
   const major = Number(match[1]);
@@ -120,12 +120,27 @@ export function chooseVersion(
   // macOS offers Apple's own login only to clients that say 3.889.
   if (major === 3 && minor === 889) {
     return hasUsername
-      ? { minor: 8, reply: "RFB 003.889\n" }
-      : { minor: 8, reply: "RFB 003.008\n" };
+      ? { minor: 8, reply: "RFB 003.889\n", apple: true }
+      : { minor: 8, reply: "RFB 003.008\n", apple: true };
   }
-  if (major > 3 || minor >= 8) return { minor: 8, reply: "RFB 003.008\n" };
-  if (minor === 7) return { minor: 7, reply: "RFB 003.007\n" };
-  return { minor: 3, reply: "RFB 003.003\n" };
+  if (major > 3 || minor >= 8) {
+    return { minor: 8, reply: "RFB 003.008\n", apple: false };
+  }
+  if (minor === 7) return { minor: 7, reply: "RFB 003.007\n", apple: false };
+  return { minor: 3, reply: "RFB 003.003\n", apple: false };
+}
+
+/**
+ * Where the pointer comes from. "local" draws the shape the server sends,
+ * "remote" expects the server to paint it into the picture. macOS does not
+ * paint it, so an unset cursor is local for a Mac and remote for the rest.
+ */
+export function cursorMode(
+  setting: string,
+  apple: boolean,
+): "local" | "remote" {
+  if (setting === "local" || setting === "remote") return setting;
+  return apple ? "local" : "remote";
 }
 
 /** The security type to use from what the server offers. */
@@ -249,6 +264,7 @@ export class VncClient implements RemoteClient, Framebuffer {
   private clipboardText = "";
   private pendingResize: { width: number; height: number } | null = null;
   private format: PixelFormat = FORMAT_24;
+  private localCursor = false;
   private attempts = 0;
   width = 0;
   height = 0;
@@ -257,10 +273,20 @@ export class VncClient implements RemoteClient, Framebuffer {
 
   start(): void {
     this.readOnly = this.host.settings.bool("read-only");
-    if (this.host.settings.get("cursor", "remote") !== "local") {
-      this.host.display.cursorDot();
-    }
+    this.localCursor =
+      cursorMode(this.host.settings.get("cursor"), false) === "local";
+    this.markCursor();
     this.connect();
+  }
+
+  /**
+   * The dot only marks the pointer when the server paints the real one into
+   * the picture. A local cursor shows the server's shape, and the arrow until
+   * it sends one: macOS never does.
+   */
+  private markCursor(): void {
+    if (this.localCursor) this.host.display.cursorDefault();
+    else this.host.display.cursorDot();
   }
 
   private connect(): void {
@@ -352,10 +378,12 @@ export class VncClient implements RemoteClient, Framebuffer {
     }
     const username = s.get("username");
     const password = s.get("password");
-    const { minor, reply } = chooseVersion(
+    const { minor, reply, apple } = chooseVersion(
       (await this.reader.bytes(12)).toString("latin1"),
       !!username,
     );
+    this.localCursor = cursorMode(s.get("cursor"), apple) === "local";
+    this.markCursor();
     this.write(Buffer.from(reply, "latin1"));
     await this.security(minor, username, password);
 
@@ -371,9 +399,12 @@ export class VncClient implements RemoteClient, Framebuffer {
     this.setSize(width, height);
     this.host.display.setSource(this.pixels());
     this.sendPixelFormat();
-    const localCursor = s.get("cursor", "remote") === "local";
     const quality = this.host.display.lossless ? 9 : 6;
-    const encodings = encodingList(s.get("encodings"), localCursor, quality);
+    const encodings = encodingList(
+      s.get("encodings"),
+      this.localCursor,
+      quality,
+    );
     this.write(
       Buffer.concat([
         Buffer.from([2, 0]),
