@@ -117,6 +117,10 @@ describe("isServerOwnedSetting", () => {
     "create-recording-path",
     "typescript-path",
     "sftp-private-key-path",
+    "sftp-hostname",
+    "sftp-port",
+    "sftp-username",
+    "sftp-password",
   ])("keeps %s for the server", (key) => {
     expect(isServerOwnedSetting(key)).toBe(true);
   });

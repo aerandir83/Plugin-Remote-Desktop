@@ -13,6 +13,7 @@ import {
 import {
   Activity,
   Copy,
+  Folder,
   Globe,
   Monitor,
   Network,
@@ -1173,6 +1174,23 @@ export function HostEditorVncTab({
             <FakeSwitch
               checked={!!form.guacamoleConfig["read-only"]}
               onChange={(v) => setGuacField("read-only", v)}
+            />
+          </SettingRow>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title={t("hosts.guac.fileTransfer")}
+        icon={<Folder className="size-3.5" />}
+      >
+        <div className="flex flex-col gap-4 py-3">
+          <SettingRow
+            label={t("hosts.guac.enableSftp")}
+            description={t("hosts.guac.enableSftpDesc")}
+          >
+            <FakeSwitch
+              checked={!!form.guacamoleConfig["enable-sftp"]}
+              onChange={(v) => setGuacField("enable-sftp", v)}
             />
           </SettingRow>
         </div>
