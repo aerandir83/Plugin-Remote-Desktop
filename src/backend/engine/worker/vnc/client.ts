@@ -257,7 +257,12 @@ export class VncClient implements RemoteClient, Framebuffer {
 
   start(): void {
     this.readOnly = this.host.settings.bool("read-only");
-    if (this.host.settings.get("cursor", "remote") !== "local") {
+    // The dot only marks the pointer when the server paints the real one into
+    // the picture. A local cursor shows the server's shape, and the arrow
+    // until it sends one: macOS never does.
+    if (this.host.settings.get("cursor", "remote") === "local") {
+      this.host.display.cursorDefault();
+    } else {
       this.host.display.cursorDot();
     }
     this.connect();
