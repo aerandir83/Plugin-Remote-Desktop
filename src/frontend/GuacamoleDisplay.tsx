@@ -148,6 +148,9 @@ export const GuacamoleDisplay = forwardRef<
   const hasKeyboardFocusRef = useRef(false);
   const isVisibleRef = useRef(isVisible);
   isVisibleRef.current = isVisible;
+  // The display stays hidden until the session is ready, and a hidden element
+  // cannot take focus, so a focus attempt that came too early waits here.
+  const pendingFocusRef = useRef<(() => boolean) | null>(null);
   const windowFocusedRef = useRef(
     typeof document === "undefined" ? true : document.hasFocus(),
   );
@@ -643,15 +646,21 @@ export const GuacamoleDisplay = forwardRef<
           rescaleDisplay(false);
           // Focus left on the Connect menu or Refresh button would swallow the
           // first keystrokes. Stay put if the user is elsewhere.
-          if (
-            isVisibleRef.current &&
-            document.visibilityState === "visible" &&
-            windowFocusedRef.current
-          ) {
+          pendingFocusRef.current = () => {
+            if (
+              !isVisibleRef.current ||
+              document.visibilityState !== "visible" ||
+              !windowFocusedRef.current
+            ) {
+              return true;
+            }
             displayElement.focus({ preventScroll: true });
+            if (document.activeElement !== displayElement) return false;
             hasKeyboardFocusRef.current = true;
             refreshKeyboardHandlers();
-          }
+            return true;
+          };
+          if (pendingFocusRef.current()) pendingFocusRef.current = null;
           break;
         case 4:
           break;
@@ -778,6 +787,11 @@ export const GuacamoleDisplay = forwardRef<
 
     refreshKeyboardHandlers();
   }, [isVisible, refreshKeyboardHandlers]);
+
+  useEffect(() => {
+    if (!isReady || !pendingFocusRef.current) return;
+    if (pendingFocusRef.current()) pendingFocusRef.current = null;
+  }, [isReady]);
 
   useEffect(() => {
     const handleWindowFocus = () => {

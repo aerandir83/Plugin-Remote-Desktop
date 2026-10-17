@@ -105,7 +105,14 @@ async function renderDisplay() {
   const view = render(<GuacamoleDisplay connectionConfig={config} isVisible />);
   await vi.waitFor(() => expect(mocks.client).not.toBeNull());
   const client = mocks.client!;
-  const focus = vi.spyOn(client.element, "focus");
+  // Browsers ignore focus() on an element that is still hidden.
+  const nativeFocus = client.element.focus.bind(client.element);
+  const focus = vi
+    .spyOn(client.element, "focus")
+    .mockImplementation((options) => {
+      if (getComputedStyle(client.element).visibility === "hidden") return;
+      nativeFocus(options);
+    });
   return { client, focus, view };
 }
 
@@ -115,7 +122,7 @@ describe("GuacamoleDisplay focus on connect", () => {
 
     act(() => client.onstatechange?.(3)); // CONNECTED
 
-    expect(focus).toHaveBeenCalledTimes(1);
+    expect(document.activeElement).toBe(client.element);
   });
 
   it("does not take focus while the tab is hidden", async () => {
