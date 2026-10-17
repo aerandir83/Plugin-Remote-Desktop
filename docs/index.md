@@ -38,7 +38,7 @@ RDP has settings for color depth, how the screen follows the window size, lossle
 
 ## VNC
 
-VNC supports password logins, VeNCrypt (TLS and X509, with or without a username), UltraVNC MS-Logon II and Apple Remote Desktop logins for macOS Screen Sharing (fill in your macOS username and password). The cursor setting picks whether the server draws the mouse pointer or your browser does, and color depth 8 or 16 uses less bandwidth on slow links.
+VNC supports password logins, VeNCrypt (TLS and X509, with or without a username), UltraVNC MS-Logon II and Apple Remote Desktop logins for macOS Screen Sharing (fill in your macOS username and password). The cursor setting picks whether the server draws the mouse pointer or your browser does (a Mac defaults to your browser, because macOS does not draw it), and color depth 8 or 16 uses less bandwidth on slow links.
 
 ## Telnet
 
