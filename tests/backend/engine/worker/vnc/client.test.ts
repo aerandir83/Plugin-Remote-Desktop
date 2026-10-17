@@ -79,6 +79,7 @@ function host(port: number, settings: Record<string, string> = {}) {
     damage: vi.fn(),
     copy: vi.fn(),
     cursorDot: vi.fn(),
+    cursorDefault: vi.fn(),
     cursorHidden: vi.fn(),
     setCursor: vi.fn(),
   };
@@ -118,6 +119,29 @@ const until = async (check: () => boolean) => {
   for (let i = 0; i < 200 && !check(); i++)
     await new Promise((r) => setTimeout(r, 10));
 };
+
+/** A server that accepts any VncAuth login and then stays quiet. */
+async function quietServer(banner = "RFB 003.008\n", reply = "RFB 003.008\n") {
+  const server = await fakeServer(async (socket, r) => {
+    socket.write(banner);
+    expect((await r.bytes(12)).toString()).toBe(reply);
+    socket.write(Buffer.from([1, 2]));
+    await r.u8();
+    socket.write(Buffer.alloc(16, 7));
+    await r.bytes(16);
+    socket.write(Buffer.alloc(4));
+    await r.u8(); // shared
+    const init = Buffer.alloc(24 + 4);
+    init.writeUInt16BE(4, 0);
+    init.writeUInt16BE(2, 2);
+    init.writeUInt32BE(4, 20);
+    init.write("test", 24);
+    socket.write(init);
+    for (;;) await r.u8();
+  });
+  servers.push(server);
+  return (server.address() as AddressInfo).port;
+}
 
 describe("VncClient", () => {
   it("logs in with VncAuth, draws an update and resizes", async () => {
@@ -262,5 +286,29 @@ describe("VncClient", () => {
       "Could not reach the VNC server",
       0x207,
     );
+  });
+});
+
+describe("VncClient pointer", () => {
+  it("marks the pointer with a dot when the server paints it", async () => {
+    const port = await quietServer();
+    const { h, display, ready } = host(port);
+    const client = new VncClient(h);
+    clients.push(client);
+    client.start();
+    await ready;
+    expect(display.cursorDot).toHaveBeenCalled();
+    expect(display.cursorDefault).not.toHaveBeenCalled();
+  });
+
+  it("shows the arrow for a local cursor until the server sends a shape", async () => {
+    const port = await quietServer();
+    const { h, display, ready } = host(port, { cursor: "local" });
+    const client = new VncClient(h);
+    clients.push(client);
+    client.start();
+    await ready;
+    expect(display.cursorDefault).toHaveBeenCalled();
+    expect(display.cursorDot).not.toHaveBeenCalled();
   });
 });
